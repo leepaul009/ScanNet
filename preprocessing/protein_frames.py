@@ -75,16 +75,16 @@ def _get_atom_triplets(sequence, atom_ids, dictionary_covalent_bonds_numba):
 def get_aa_frameCloud(atom_coordinates, atom_ids, verbose=True, method='triplet_backbone'):
     if method == 'triplet_backbone':
         get_aa_frameCloud_ = _get_aa_frameCloud_triplet_backbone
-    elif method == 'triplet_sidechain':
+    elif method == 'triplet_sidechain': # this . train
         get_aa_frameCloud_ = _get_aa_frameCloud_triplet_sidechain
     elif method == 'triplet_cbeta':
         get_aa_frameCloud_ = _get_aa_frameCloud_triplet_cbeta
     elif method == 'quadruplet':
         get_aa_frameCloud_ = _get_aa_frameCloud_quadruplet
     aa_clouds, aa_triplets = get_aa_frameCloud_(List(atom_coordinates), List(atom_ids), verbose=verbose)
-    aa_indices = np.arange(len(atom_coordinates)).astype(np.int32)[:, np.newaxis]
-    aa_clouds = np.array(aa_clouds)
-    aa_triplets = np.array(aa_triplets, dtype=np.int32)
+    aa_indices = np.arange(len(atom_coordinates)).astype(np.int32)[:, np.newaxis] # [n_res_in_chain, 1]
+    aa_clouds = np.array(aa_clouds) # [1 + 2 * n_res_in_chain, 3] because first center has virtual prev, and rest of center have prev
+    aa_triplets = np.array(aa_triplets, dtype=np.int32) # [n_res_in_chain, 3]
     return aa_clouds, aa_triplets, aa_indices
 
 
@@ -131,11 +131,12 @@ def _get_aa_frameCloud_triplet_sidechain(atom_coordinates, atom_ids, verbose=Tru
     aa_triplets = List()
     count = 0
     for l in range(L):
-        atom_coordinate = atom_coordinates[l]
+        # each residue
+        atom_coordinate = atom_coordinates[l] # [n_atoms_in_res, 3]
         atom_id = atom_ids[l]
         natoms = len(atom_id)
         if 1 in atom_id:
-            calpha_coordinate = atom_coordinate[atom_id.index(1)]
+            calpha_coordinate = atom_coordinate[atom_id.index(1)] # only get coord of C_alpha in this residue
         else:
             if verbose:
                 print('Warning, pathological amino acid missing calpha', l)
@@ -146,7 +147,7 @@ def _get_aa_frameCloud_triplet_sidechain(atom_coordinates, atom_ids, verbose=Tru
         count += 1
         if count > 1:
             previous = aa_triplets[-1][0]
-        else:
+        else: # for first
             # Need to place another virtual Calpha.
             virtual_calpha_coordinate = 2 * calpha_coordinate - atom_coordinates[1][0]
             aa_clouds.append(virtual_calpha_coordinate)
@@ -156,6 +157,7 @@ def _get_aa_frameCloud_triplet_sidechain(atom_coordinates, atom_ids, verbose=Tru
         sidechain_CoM = np.zeros(3, dtype=np.float32)
         sidechain_mass = 0.
         for n in range(natoms):
+            # when computing sidechain_CoM, we exclude C CA N O OXT
             if not atom_id[n] in [0, 1, 17, 26, 34]:
                 mass = atom_type_mass[atom_id[n]]
                 sidechain_CoM += mass * atom_coordinate[n]
@@ -167,6 +169,7 @@ def _get_aa_frameCloud_triplet_sidechain(atom_coordinates, atom_ids, verbose=Tru
             #TO CHANGE FOR NEXT NETWORK ITERATION... I used the wrong nitrogen when I rewrote the function...
             if l>0:
                 if (0 in atom_id) & (1 in atom_id) & (17 in atom_ids[l-1]):  # If C,N,Calpha are here, place virtual CoM
+                    # SCoM = 3 * coord of Ca(cur res) - coord of N(last res) - coord of C(cur res)
                     sidechain_CoM = 3 * atom_coordinate[atom_id.index(1)] - atom_coordinates[l-1][atom_ids[l-1].index(17)] - \
                                     atom_coordinate[atom_id.index(0)]
                 else:
@@ -190,7 +193,7 @@ def _get_aa_frameCloud_triplet_sidechain(atom_coordinates, atom_ids, verbose=Tru
         aa_clouds.append(sidechain_CoM)
         next = 1 * count
         count += 1
-        aa_triplets.append((center, previous, next))
+        aa_triplets.append((center, previous, next)) # index of aa_clouds, ex. center is an int and index to search from aa_clouds
     return aa_clouds, aa_triplets
 
 

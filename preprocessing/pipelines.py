@@ -133,20 +133,20 @@ class Pipeline():
 
 
     def build_processed_dataset(self,
-                                dataset_name,
-                                list_origins=None,
-                                list_resids=None,
-                                list_labels=None,
-                                biounit=True,
+                                dataset_name, # 
+                                list_origins=None, # 
+                                list_resids=None, # 
+                                list_labels=None, # 
+                                biounit=True, # true
                                 structures_folder=structures_folder,
                                 MSA_folder=MSA_folder,
                                 pipeline_folder=pipeline_folder,
                                 verbose= True,
-                                fresh= False,
-                                save = True,
-                                permissive=True,
+                                fresh= False, # false
+                                save = True, # true
+                                permissive=True, # true
                                 overwrite=False,
-                                ncores = 1
+                                ncores = 1 # 4
                                 ):
         location_processed_dataset = pipeline_folder + dataset_name + '_%s.data' % self.pipeline_name
 
@@ -195,7 +195,7 @@ class Pipeline():
                                                       ncores=ncores
                                                       )
             print('Processed dataset built... (t=%.f s)' % (time.time() - t))
-            if save:
+            if save: # true
                 print('Saving processed dataset...')
                 t = time.time()
                 env = {'inputs': inputs, 'outputs': outputs,'failed_samples':failed_samples}
@@ -205,16 +205,16 @@ class Pipeline():
         return inputs,outputs,failed_samples
 
     def build_and_process_dataset(self,
-                                  list_origins,
-                                  list_resids=None,
-                                  list_labels=None,
-                                  biounit=True,
-                                  structures_folder=structures_folder,
-                                  MSA_folder=MSA_folder,
-                                  verbose=True,
-                                  overwrite=False,
-                                  permissive=True,
-                                  ncores = 1
+                                  list_origins, # 
+                                  list_resids=None, # 
+                                  list_labels=None, #
+                                  biounit=True, # true
+                                  structures_folder=structures_folder, #
+                                  MSA_folder=MSA_folder, #
+                                  verbose=True, # true
+                                  overwrite=False, # false
+                                  permissive=True, # true
+                                  ncores = 1 # 4
                                   ):
         B = len(list_origins)
         if (list_labels is not None):
@@ -303,6 +303,7 @@ class Pipeline():
             inputs = []
             outputs = []
             failed_samples = []
+            # for each chain
             for b, origin in enumerate(list_origins):
                 if verbose:
                     print('Processing example %s (%s/%s)' % (origin, b, B))
@@ -310,11 +311,11 @@ class Pipeline():
                 try:
                     pdbfile, chain_ids = PDBio.getPDB(origin, biounit=biounit, structures_folder=structures_folder)
                     struct, chain_objs = PDBio.load_chains(file=pdbfile, chain_ids=chain_ids)
-
+                    # pwm is in requirements
                     if ('PWM' in self.requirements) | ('conservation' in self.requirements):
-                        sequences = [PDB_processing.process_chain(chain_obj)[0] for chain_obj in chain_objs]
+                        sequences = [PDB_processing.process_chain(chain_obj)[0] for chain_obj in chain_objs] # return str
                         output_alignments = [MSA_folder + 'MSA_' + '%s_%s_%s' % (
-                        PDBio.parse_str(origin)[0].split('/')[-1].split('.')[0], chain_id[0], chain_id[1]) + '.fasta' for chain_id in chain_ids]
+                            PDBio.parse_str(origin)[0].split('/')[-1].split('.')[0], chain_id[0], chain_id[1]) + '.fasta' for chain_id in chain_ids]
                         MSA_files = [sequence_utils.call_hhblits(sequence, output_alignment,overwrite=overwrite) for sequence, output_alignment in
                                      zip(sequences, output_alignments)]
                         if len(MSA_files) == 1:
@@ -356,7 +357,7 @@ class Pipeline():
                     return [],None,failed_samples
             ninputs = len(inputs[0]) if isinstance(inputs[0],list) else 1
 
-            if self.padded:
+            if self.padded: # false
                 if ninputs>1:
                     inputs = [np.stack([input[k] for input in inputs], axis=0)
                               for k in range(ninputs)]
@@ -704,8 +705,8 @@ class ScanNetPipeline(Pipeline):
     def __init__(self,
                  pipeline_folder=pipeline_folder,
                  with_aa=True,
-                 with_atom=True,
-                 aa_features='sequence',
+                 with_atom=True, # true
+                 aa_features='sequence', # use pwm
                  atom_features='valency',
                  Beff=500,
                  aa_frames='triplet_sidechain',
@@ -730,30 +731,30 @@ class ScanNetPipeline(Pipeline):
         self.with_aa = with_aa
         self.with_atom = with_atom
         if Lmax_atom is None:
-            Lmax_atom = 9 * Lmax_aa
+            Lmax_atom = 9 * Lmax_aa # 7200
         if Lmax_aa_points is None:
             if aa_frames == 'triplet_backbone':
                 Lmax_aa_points = Lmax_aa + 2
             elif aa_frames =='triplet_sidechain':
-                Lmax_aa_points = 2*Lmax_aa+1
+                Lmax_aa_points = 2*Lmax_aa+1 # 1601
             elif aa_frames == 'triplet_cbeta':
                 Lmax_aa_points = 2*Lmax_aa + 1
             elif aa_frames == 'quadruplet':
                 Lmax_aa_points = 2*Lmax_aa+2
         if Lmax_atom_points is None:
-            Lmax_atom_points = 11 * Lmax_aa
-        self.Lmax_aa = Lmax_aa
-        self.Lmax_atom = Lmax_atom
-        self.Lmax_aa_points = Lmax_aa_points
-        self.Lmax_atom_points = Lmax_atom_points
+            Lmax_atom_points = 11 * Lmax_aa # 8800
+        self.Lmax_aa = Lmax_aa # 800
+        self.Lmax_atom = Lmax_atom # 7200
+        self.Lmax_aa_points = Lmax_aa_points # 1601
+        self.Lmax_atom_points = Lmax_atom_points # 8800
 
-        self.aa_features = aa_features
-        self.atom_features = atom_features
+        self.aa_features = aa_features # 'pwm'
+        self.atom_features = atom_features # 'valency'
 
         assert aa_frames in ['triplet_sidechain','triplet_cbeta','triplet_backbone','quadruplet']
-        self.aa_frames = aa_frames
-        self.Beff = Beff
-        self.padded = padded
+        self.aa_frames = aa_frames # triplet_sidechain
+        self.Beff = Beff # 500
+        self.padded = padded # false
 
         self.requirements = ['atom_coordinate', 'atom_id','sequence']
 
@@ -761,19 +762,17 @@ class ScanNetPipeline(Pipeline):
             if self.aa_features in ['pwm', 'both']:
                 self.requirements.append('PWM')
 
-
+    # process each chain
     def process_example(self,
-                        chain_obj=None,
+                        chain_obj=None, # 
                         sequence=None,
-                        MSA_file=None,
+                        MSA_file=None, # has file name but not exist
                         atomic_coordinates=None,
                         atom_ids=None,
                         PWM=None,
-                        labels=None,
+                        labels=None, # 
                         *kwargs
                         ):
-
-
         # print('Entering process_example, MSA_file:%s'%MSA_file )
         if chain_obj is not None:
             sequence, backbone_coordinates, atomic_coordinates, atom_ids, atom_types = PDB_processing.process_chain(
@@ -840,14 +839,14 @@ class ScanNetPipeline(Pipeline):
                 aa_indices = remove_nan(aa_indices, padding_value=-1 )
 
 
-        if self.with_atom:
-            atom_clouds, atom_triplets, atom_attributes, atom_indices = protein_frames.get_atom_frameCloud(sequence, atomic_coordinates,atom_ids)
+        if self.with_atom: # true
+            atom_clouds, atom_triplets, atom_attributes, atom_indices = protein_frames.get_atom_frameCloud(sequence, atomic_coordinates, atom_ids)
             atom_clouds, atom_triplets = protein_frames.add_virtual_atoms(atom_clouds, atom_triplets, verbose=True)
 
             if self.atom_features == 'type':
                 natom_features = 4
                 atom_attributes = protein_chemistry.index_to_type[atom_attributes]
-            elif self.atom_features =='valency':
+            elif self.atom_features =='valency': # this
                 atom_attributes = protein_chemistry.index_to_valency[ sequence_utils.seq2num(sequence)[0,atom_indices[:,0]] ,atom_attributes]
                 natom_features = 12
             elif self.atom_features == 'id':

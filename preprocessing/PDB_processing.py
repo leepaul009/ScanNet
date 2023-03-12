@@ -44,7 +44,11 @@ def is_hydrogen(atom):
 
 
 
-
+# sequence: string
+# backbone_coordinates: [num_residues, 5, 3]
+# all_coordinates: list([n_atoms, 3]), len_list = num_residues
+# all_atoms: list(list=[atom_id, ...]),  len_list = num_residues
+# all_atom_types: shape is same to all_atoms, type of C O N S
 def process_chain(chain):
     sequence = ''
     backbone_coordinates = []

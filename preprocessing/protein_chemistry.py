@@ -25,7 +25,7 @@ atom_mass = np.array(
 atom_type_to_index = dict([(list_atoms_types[i], i)
                            for i in range(len(list_atoms_types))])
 
-
+# when computing sidechain_CoM, we exclude C CA N O OXT
 list_atoms = ['C', 'CA', 'CB', 'CD', 'CD1', 'CD2', 'CE', 'CE1', 'CE2', 'CE3',
               'CG', 'CG1', 'CG2', 'CH2', 'CZ', 'CZ2', 'CZ3', 'N', 'ND1', 'ND2',
               'NE', 'NE1', 'NE2', 'NH1', 'NH2', 'NZ', 'O', 'OD1', 'OD2', 'OE1',

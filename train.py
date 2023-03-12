@@ -156,7 +156,7 @@ if __name__ == '__main__':
         list_resids,#List of corresponding residue identifiers.
         list_labels)  = dataset_utils.read_labels(dataset_location) # List of residue-wise labels
 
-        if check:
+        if check: # def false
             list_origins = list_origins[:10]
             list_sequences = list_sequences[:10]
             list_resids = list_resids[:10]
