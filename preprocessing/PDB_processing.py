@@ -46,9 +46,9 @@ def is_hydrogen(atom):
 
 # sequence: string
 # backbone_coordinates: [num_residues, 5, 3]
-# all_coordinates: list([n_atoms, 3]), len_list = num_residues
-# all_atoms: list(list=[atom_id, ...]),  len_list = num_residues
-# all_atom_types: shape is same to all_atoms, type of C O N S
+# all_coordinates:  list([n_heavy_atoms, 3]),     len_list = num_residues
+# all_atoms:        list(list=[atom_id, ...]),    len_list = num_residues
+# all_atom_types:   list(list=[atom_type, ...]),  len_list = num_residues, type of C O N S
 def process_chain(chain):
     sequence = ''
     backbone_coordinates = []
@@ -59,11 +59,11 @@ def process_chain(chain):
         if is_residue(residue):
             sequence += residue_dictionary[residue.resname]
             residue_atom_coordinates = np.array(
-                [atom.get_coord() for atom in residue if is_heavy_atom(atom)])
+                [atom.get_coord() for atom in residue if is_heavy_atom(atom)]) # [n_heavy_atoms, 3]
             residue_atoms = [atom_to_index[atom.get_id()]
-                             for atom in residue if is_heavy_atom(atom)  ]
+                             for atom in residue if is_heavy_atom(atom)  ] # atom index, list, len=n_heavy_atoms
             residue_atom_type = [atom_type_to_index[atom.get_id()[0]]
-                                 for atom in residue if is_heavy_atom(atom) ]
+                                 for atom in residue if is_heavy_atom(atom) ] # atom type, list, len=n_heavy_atoms
             residue_backbone_coordinates = []
             for atom in ['N', 'C', 'CA', 'O', 'CB']:
                 try:
@@ -130,6 +130,8 @@ def get_PDB_indices(chain_obj,return_model=False,return_chain=False):
     for residue in Selection.unfold_entities(chain_obj, 'R'):
         if is_residue(residue):
             if return_model & return_chain:
+                # ex, residue.get_full_id() ==> ('13gs', 0, 'A', ('H_SAS', 211, ' '))
+                # ex, residue.get_id() ==> ('H_SAS', 211, ' ')
                 list_indices.append( (residue.get_full_id()[1],residue.get_full_id()[2],residue.get_id()[1]) )
             elif return_chain:
                 list_indices.append( (residue.get_full_id()[2],residue.get_id()[1]) )

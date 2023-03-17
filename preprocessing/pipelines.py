@@ -131,7 +131,7 @@ class Pipeline():
         self.padded = False
         return
 
-
+    # build dataset: very first entry
     def build_processed_dataset(self,
                                 dataset_name, # 
                                 list_origins=None, # 
@@ -179,7 +179,7 @@ class Pipeline():
 
             if condition1 & condition2:
                 inputs,outputs,failed_samples = self.process_dataset(env, label_name='all_labels' if 'all_labels' in env.keys() else None,permissive=permissive)
-            else:
+            else: # run this
                 if verbose:
                     print('Building and processing dataset %s' % dataset_name)
                 inputs,outputs,failed_samples = self.build_and_process_dataset(
@@ -209,8 +209,8 @@ class Pipeline():
                                   list_resids=None, # 
                                   list_labels=None, #
                                   biounit=True, # true
-                                  structures_folder=structures_folder, #
-                                  MSA_folder=MSA_folder, #
+                                  structures_folder=structures_folder, # PDB
+                                  MSA_folder=MSA_folder, # MSA
                                   verbose=True, # true
                                   overwrite=False, # false
                                   permissive=True, # true
@@ -309,7 +309,7 @@ class Pipeline():
                     print('Processing example %s (%s/%s)' % (origin, b, B))
 
                 try:
-                    pdbfile, chain_ids = PDBio.getPDB(origin, biounit=biounit, structures_folder=structures_folder)
+                    pdbfile, chain_ids = PDBio.getPDB(origin, biounit=biounit, structures_folder=structures_folder) # ex. 'PDB/pdb13gs.bioent', [(0, 'A')]
                     struct, chain_objs = PDBio.load_chains(file=pdbfile, chain_ids=chain_ids)
                     # pwm is in requirements
                     if ('PWM' in self.requirements) | ('conservation' in self.requirements):
@@ -326,9 +326,9 @@ class Pipeline():
                     if has_labels:
                         labels = list_labels[b]
                         pdb_resids = PDB_processing.get_PDB_indices(chain_objs, return_model=True, return_chain=True)
-                        aligned_labels = align_labels(labels,
+                        aligned_labels = align_labels(labels, # compare label_resids with pdb_resids(come from chain_objs)
                                                       pdb_resids,
-                                                      label_resids=list_resids[b] if has_resids else None)
+                                                      label_resids=list_resids[b] if has_resids else None) # return [n_res,] value 0 or 1, -1 indicate invalid data
                     else:
                         aligned_labels = None
 

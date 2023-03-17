@@ -76,7 +76,7 @@ def addNonLinearity(input_layer, activation, name=None):
             activation), name=name)(input_layer_normalized)
     return output_layer
 
-
+# attribute_layer shape=(None, 256, 20)
 def attribute_embedding(attribute_layer,output_dim, activation,name=None):
     if name is None:
         name = 'attribute_embedding'
@@ -346,7 +346,7 @@ def ScanNet(
 
 
     ## Embed attributes.
-
+    ## masked_attributes_aa shape=[None,256,20], apply nn along dim[1]=256, and output_dim[2] = 32
     if nembedding_aa is not None: # Apply point-wise dense embedding.
         embedded_attributes_aa = attribute_embedding(masked_attributes_aa,nembedding_aa,activation,name='embedded_attributes_aa')
     else: # Normalize such that that variance is approximately one.
@@ -606,7 +606,7 @@ def initialize_ScanNet(
     if frame_aa == 'triplet_backbone':
         Lmax_aa_points = Lmax_aa + 2
     elif frame_aa in ['triplet_sidechain','triplet_cbeta']:
-        Lmax_aa_points = 2 * Lmax_aa + 1
+        Lmax_aa_points = 2 * Lmax_aa + 1 # size(center+prev)=2*Lmax_aa+1, size(next)=Lmax_aa
     elif frame_aa == 'quadruplet':
         Lmax_aa_points = 2 * Lmax_aa + 2
     Lmax_atom_points = 11 * Lmax_aa

@@ -54,16 +54,16 @@ def _get_atom_triplets(sequence, atom_ids, dictionary_covalent_bonds_numba):
             else:
                 key = (aa + '_' + str(id) )
                 if key in all_keys:
-                    previous_id, next_id, _ = dictionary_covalent_bonds_numba[(aa + '_' + str(id) )]
+                    previous_id, next_id, _ = dictionary_covalent_bonds_numba[(aa + '_' + str(id) )] # return atom index(ref. dictionary_covalent_bonds)
                 else:
                     print('Strange atom', (aa + '_' + str(id) ))
                     previous_id = -1
                     next_id = -1
-                if previous_id in atom_id:
-                    previous = current_natoms + atom_id.index(previous_id)
+                if previous_id in atom_id: # if prev atom id(covalent bond) in current residue
+                    previous = current_natoms + atom_id.index(previous_id) # in which position of residue (not atom index)
                 else:
                     previous = -1
-                if next_id in atom_id:
+                if next_id in atom_id: # if prev atom id(covalent bond) in current residue
                     next = current_natoms + atom_id.index(next_id)
                 else:
                     next = -1
@@ -164,7 +164,7 @@ def _get_aa_frameCloud_triplet_sidechain(atom_coordinates, atom_ids, verbose=Tru
                 sidechain_mass += mass
         if sidechain_mass > 0:
             sidechain_CoM /= sidechain_mass
-        else:  # Usually case of Glycin
+        else:  # Usually case of Glycin (do not have side chain)
             #'''
             #TO CHANGE FOR NEXT NETWORK ITERATION... I used the wrong nitrogen when I rewrote the function...
             if l>0:
@@ -194,6 +194,8 @@ def _get_aa_frameCloud_triplet_sidechain(atom_coordinates, atom_ids, verbose=Tru
         next = 1 * count
         count += 1
         aa_triplets.append((center, previous, next)) # index of aa_clouds, ex. center is an int and index to search from aa_clouds
+    # aa_clouds store all coord, ex, [1st_res_ctr_coord, 1st_res_prev_coord, 1st_res_next_coord, ...]
+    # aa_triplets record "corresponding center/prev/next coord's index in aa_clouds", ex, (0,1,2) where 0 indicate index-0 of aa_clouds
     return aa_clouds, aa_triplets
 
 

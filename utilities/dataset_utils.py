@@ -41,18 +41,19 @@ def read_labels(input_file, nmax=np.inf, label_type='int'):
             if (line[0] == '>'):
                 if count == nmax:
                     break
-                if count > 0:
+                if count > 0: # process previous chain
                     list_origins.append(origin)
                     list_sequences.append(sequence)
                     list_labels.append(np.array(labels))
                     list_resids.append(np.array(resids))
 
-                origin = line[1:-1]
+                origin = line[1:-1] # ex. "13gs_0-A"
                 sequence = ''
                 labels = []
                 resids = []
                 count += 1
             else:
+                # ex. "A 0 M 0" resid:['A','0']; sequence:str(..M..); label:0
                 line_splitted = line[:-1].split(' ')
                 resids.append(line_splitted[:2])
                 sequence += line_splitted[2]
@@ -66,10 +67,10 @@ def read_labels(input_file, nmax=np.inf, label_type='int'):
     list_labels.append(np.array(labels))
     list_resids.append(np.array(resids))
 
-    list_origins = np.array(list_origins)
-    list_sequences = np.array(list_sequences)
-    list_labels = np.array(list_labels)
-    list_resids = np.array(list_resids)
+    list_origins = np.array(list_origins) # [n_chains,]
+    list_sequences = np.array(list_sequences) # [n_chains,]
+    list_labels = np.array(list_labels) # [n_chains, n_atoms]
+    list_resids = np.array(list_resids) # [n_chains, n_atoms, 2]
     return list_origins, list_sequences, list_resids, list_labels
 
 
@@ -85,7 +86,7 @@ def align_labels(labels, pdb_resids,label_resids=None,format='missing'):
         elif (label_resids.shape[-1] == 1):  # No model or chain index.
             pdb_resids = pdb_resids[:, -1:]  # Remove model and chain index
 
-        pdb_resids_str = np.array(['_'.join([str(x) for x in y]) for y in pdb_resids])
+        pdb_resids_str = np.array(['_'.join([str(x) for x in y]) for y in pdb_resids]) # ex, (A,98)=>A_98
         label_resids_str = np.array(['_'.join([str(x) for x in y]) for y in label_resids])
         idx_pdb, idx_label = np.nonzero(pdb_resids_str[:, np.newaxis] == label_resids_str[np.newaxis, :])
         if format == 'sparse': # Unaligned labels are assigned category zero.

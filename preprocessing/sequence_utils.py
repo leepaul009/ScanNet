@@ -13,7 +13,7 @@ curr_int = np.int16
 
 aa = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L',
       'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V',  'W', 'Y', '-']
-aadict = {aa[k]: k for k in range(len(aa))}
+aadict = {aa[k]: k for k in range(len(aa))} # str->int
 
 aadict['X'] = len(aa)
 aadict['B'] = len(aa)
