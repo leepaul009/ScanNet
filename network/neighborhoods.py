@@ -77,7 +77,7 @@ class FrameBuilder(Layer):
             dipole = (dipole + self.epsilon * tf.reshape(self.zaxis,[1,1,3])) / (tf.sqrt(tf.reduce_sum(dipole ** 2, axis=-1, keepdims=True) ) + self.epsilon)
             frames = tf.stack([centers,xaxis,yaxis,zaxis,dipole],axis=-2)
         else:
-            frames = tf.stack([centers,xaxis,yaxis,zaxis],axis=-2)
+            frames = tf.stack([centers,xaxis,yaxis,zaxis],axis=-2) # (batch, n_aa/atom[stack_dim], 3)
 
         if mask not in [None,[None,None]]:
             frames *= tf.expand_dims(tf.expand_dims(tf.cast(mask[-1],tf.float32),axis=-1),axis=-1)

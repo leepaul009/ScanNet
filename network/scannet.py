@@ -99,7 +99,7 @@ def attribute_normalizer(attribute_layer,name=None,normalizer=1.0):
 def neighborhood_embedding(
         point_clouds,
         frame_indices,
-        attributes,
+        attributes, # (batch, num_a/aa, embed_dim)
         sequence_indices=None,
         order_frame='2',
         dipole_frame=False,
@@ -128,14 +128,14 @@ def neighborhood_embedding(
         input2localneighborhood = [frames, sequence_indices, attributes]
     else:
         input2localneighborhood = [frames, attributes]
-
+    # (?, n_atoms, 16, 3) (?, n_atoms, 16, 12)
     local_coordinates, local_attributes = neighborhoods.LocalNeighborhood(Kmax=Kmax,
                                                                           coordinates=coordinates,
                                                                           index_distance_max=index_distance_max,
                                                                           nrotations=nrotations,
                                                                           name='neighborhood_%s'%scale)(input2localneighborhood)
 
-    # Gaussian embedding of local coordinates.
+    # Gaussian embedding of local coordinates. (?, n_atoms, 16, 3)->(?, n_atoms, 16, 32)
     embedded_local_coordinates = embeddings.GaussianKernel(Ngaussians,
                                                            initial_values=initial_gaussian_values,
                                                            covariance_type=covariance_type,
@@ -146,7 +146,7 @@ def neighborhood_embedding(
         kernel_regularizer = partial(l1_regularization, l1=l1)
         single1_regularizer = kernel_regularizer
         fixednorm = np.sqrt(Ngaussians / Kmax)
-    elif l12 > 0:
+    elif l12 > 0: # use this
         kernel_regularizer = partial(l12_regularization, l12=l12, ndims=3)
         single1_regularizer = partial(l12_regularization, l12=l12, ndims=2)
         fixednorm = np.sqrt(Ngaussians / Kmax)
@@ -159,7 +159,7 @@ def neighborhood_embedding(
         kernel_regularizer = None
         single1_regularizer = None
         fixednorm = None
-
+    # G(x) * a + G(x) + bias
     spatiochemical_filters_input = embeddings.OuterProduct(nfilters,
                                                            use_single1=True, use_single2=False,
                                                             use_bias=False,
@@ -362,7 +362,7 @@ def ScanNet(
         embedded_attributes_atom = Embedding(
             nfeatures_atom + 1, nembedding_atom, mask_zero=True, embeddings_initializer=utils.embeddings_initializer,
             embeddings_constraint=utils.FixedNorm(axis=0, value=np.sqrt(nfeatures_atom)), trainable=trainable,
-            name='embedded_attributes_atom')(attributes_atom)
+            name='embedded_attributes_atom')(attributes_atom) # out=(None, n_atoms, 12)
 
         ## If atomic coordinates are included, compute embeddings of atomic neighborhoods.
         SCAN_filters_atom = neighborhood_embedding(
@@ -396,13 +396,13 @@ def ScanNet(
             kernel_regularizer = None
             kernel_constraint = None
 
-        # Compute attention coefficients (before softmax) for each atom.
+        # Compute attention coefficients (before softmax) for each atom. (None, 2304, 128)->(None, 2304, 64)
         pooling_attention = TimeDistributed(Dense(nattentionheads_pooling, use_bias=False,
                                                   kernel_regularizer=kernel_regularizer,
                                                   kernel_initializer=Zeros()),
                                             name='attention_pooling_coefficients_atom')(SCAN_filters_atom)
 
-        # Compute output coefficients (before averaging) for each atom.
+        # Compute output coefficients (before averaging) for each atom. (None, 2304, 128)->(None, 2304, 64)
         pooling_features = TimeDistributed(Dense(dense_pooling, activation=None, use_bias=False,
                                            kernel_regularizer=kernel_regularizer,
                                            kernel_constraint=kernel_constraint,
@@ -410,7 +410,7 @@ def ScanNet(
                                                  ),
                                            name='attention_pooling_features_atom')(SCAN_filters_atom)
 
-
+        # get aa's neighbor atom: (None,256,14,1), (None,256,14,64), (None,256,14,64)
         # Build a binary bipartite graph from amino acid to atoms.
         # For each amino acid we look for the 14 closest atoms in terms of sequence distance.
         pooling_mask, pooling_attention_local, pooling_features_local = neighborhoods.LocalNeighborhood(Kmax=14,
@@ -427,7 +427,7 @@ def ScanNet(
             pooling_mask)
         # Reverse the pooling mask such that M_{ij} =1 iff atom j belongs to amino acid i.
 
-
+        # (None, 256, 64)
         SCAN_filters_atom_aggregated_input, _ = attention.AttentionLayer(self_attention=False, beta=False,
                                                         name='SCAN_filters_atom_aggregated_input')(
             [pooling_attention_local, pooling_features_local, pooling_mask])
